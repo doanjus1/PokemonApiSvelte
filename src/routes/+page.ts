@@ -5,7 +5,7 @@ type IndexMonster = {
     url: string
 }
 export const load = (async () => {
-    const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=15')
+    const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=40')
     const json = await response.json()
     const monsters = json.results.map((monster: IndexMonster) => {
         const splitUrl = monster.url.split('/')
@@ -15,6 +15,7 @@ export const load = (async () => {
         name: monster.name,
         url: monster.url,
         id,
+        image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
     }
 })
 
