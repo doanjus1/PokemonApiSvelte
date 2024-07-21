@@ -1,91 +1,131 @@
 <script lang="ts">
-    import {hello} from "./hello";
-    import type {PageData} from "./$types";
-    import type {IndexMonster} from "./+page";
+    import type { PageData } from "./$types";
+    import { page } from "$app/stores";
     import { generations } from "./generations";
-
-    const greetingObject = {
-        greeting: "Test",
-        name: "World"
-    };
-
+    import { goto } from "$app/navigation";
+    import Monster from "./Monster.svelte";
+    
     export let data: PageData;
-
-    let monsterId: string;
-    $: monster = data.monsters.find((monster) => monster.id === monsterId)
-    const monsterClick = (monster: IndexMonster) => {
-        monsterId = monster.id;
+    
+    let form = {
+      searchString: ''
     }
-</script>
-<h2>{monster?.name}</h2>
-<h1>Welcome to {hello} {greetingObject.name}</h1>
+    let searchString = ''
+    $: selectedMonsters = data.monsters.filter((monster) => {
+      return monster.name.toLowerCase().includes(searchString.toLowerCase());
+    })
+    
+    $: monsterId = $page.url.searchParams.get("monsterId") || '';
+    $: monster = data.monsters.find((monster) => monster.id === monsterId);
+    $: monsterId2 = $page.url.searchParams.get("monsterId2") || '';
+    $: monster2 = data.monsters.find((monster) => monster.id === monsterId2);
 
-<div class="generations">
-    {#each generations as generation (generation.id)}
-      <div class="generation">{generation.main_region}</div>
-    {/each}
-</div>
-
-<div class="monsters">
-    {#each data.monsters as monster (monster.url)}
-        <div class="monster" on:click={() => monsterClick(monster)}>
-            <div class=monster-container>
-                <img src={monster.image} alt={monster.name}/>
-                {monster.name}
-            </div>
-            <div class='monster-id'>
-                {monster.id}
-            </div>
-        </div>
-    {/each}
-</div>
-
-<style>
-    h1 {
-        color: red;
+    $: selectedGenerationId = $page.url.searchParams.get('generation_id') || '';
+    
+    const updateSearchParams = (key: string, value: string) => {
+      const searchParams = new URLSearchParams($page.url.searchParams);
+      searchParams.set(key, value);
+      goto(`?${searchParams.toString()}`);
+    };
+    
+    const submitSearch = (e: Event) => {
+      searchString = form.searchString
     }
-
+    
+    </script>
+    
+    {#if monster}
+      <Monster
+        monster={monster}
+        updateSearchParams={updateSearchParams}
+      />
+    {/if}
+    {#if monster2}
+      <Monster
+        monster={monster2}
+        updateSearchParams={updateSearchParams}
+      />
+    {/if}
+    
+    <div class="generations">
+      {#each generations as generation (generation.id)}
+        <button class="generation"
+        class:active={selectedGenerationId === generation.id.toString()}
+            on:click={() => updateSearchParams('generation_id', generation.id.toString())}>
+            {generation.main_region}
+    </button>
+      {/each}
+    </div>
+    
+    <form class="search-form" on:submit={submitSearch}>
+      <input type="text" bind:value={form.searchString} placeholder="Pokemon Name" />
+      <input type="submit" value="Search" />
+    </form>
+    
+    <div class="monsters">
+      {#each selectedMonsters as monster (monster.id)}
+        <Monster
+          monster={monster}
+          updateSearchParams={updateSearchParams}
+          isInteractive={true}
+        />
+      {/each}
+    </div>
+    
+    <style>
     .generations {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-
     .generation {
-        margin: 10px;
-        padding: 5px 10px;
-        border: 1px solid black;
-        background-color: #eaeaea;
+      margin: 5px;
+      padding: 5px 10px;
+      border: 1px solid black;
+      background-color: #f9f9f9;
+      color: #333;
+      cursor: pointer;
+    }
+    .generation.active{
+        background: #333;
+        color: #eee;
+
+    }
+    .generation.active:hover{
+        background: #444;
+
+    }
+    .generation:hover {
+      background-color: #eee;
     }
     .monsters {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-
-    .monster-id{
-        position: absolute;
-        top: 0;
-        left: 0;
-        padding-left: 5px;
-        font-size: 0.8em;
+    
+    .search-form {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
     }
-    .monster {
-        width: 100px;
-        margin: 10px;
-        padding: 10px;
-        position: relative;
-        background-color: #eee;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    
+    .search-form input[type="text"] {
+      padding: 5px 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      width: 200px;
     }
-
-    .monster:hover {
-        background-color: #ddd;
+    
+    .search-form input[type="submit"] {
+      padding: 5px 10px;
+      border: 1px solid #333;
+      border-radius: 5px;
+      margin-left: 10px;
+      background-color: #333;
+      color: #fff;
     }
-    .monster-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-</style>
+    
+    </style>
